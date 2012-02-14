@@ -3,6 +3,8 @@ require 'mail'
 require 'redcarpet'
 require 'base64'
 
+#TODO: hRecipe classes
+
 class MailBuilder
   BLOG_URL_ROOT = 'http://www.fitpaleofamily.com/'
 
@@ -10,8 +12,7 @@ class MailBuilder
     @src_mail = mail
     @mail = Mail.new do
       from 'swalke16@gmail.com'
-      #to 'fitpaleofamily@posterous.com'
-      to 'swalke16@gmail.com'
+      to 'fitpaleofamily@posterous.com'
     end
   end
 
