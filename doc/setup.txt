@@ -1,0 +1,360 @@
+Setup ec2 instance with:
+
+1) Ruby
+2) Git
+3) Postfix
+4) Install required gems
+5) Setup postfix configuration from git repo
+
+Additional Info From Here:
+
+
+HOME
+CONTACT
+SITES
+SOFTWARE
+PODCAST
+BLOG
+respond_to.email, or how to handle incoming emails in rails RESTfully
+Posted by Craig Ambrose on February 09, 2008 at 04:49 AM
+There’s a bunch of information around on how to handle incoming emails with your rails application, in particular the wiki page, but I have some concerns with the methods that are being suggested, and in this article I present an alternative which I’ve been trying out and I really like.
+
+Handling incoming email is, in essence, very simple. All you need to do is get the email, which is a big chunk of text, parse it with a ruby email class, such as TMail (which is used by ActionMailer), and perform some action. If you’re only handling a few specific addresses, it might be best to fetch the email via POP3, and I’ve done that before using a daemon to regularly poll the pop account.
+
+POP3 is not a viable solution if you want to handle all email for a certain domain. At this point, we probably want to talk about SMTP.
+
+A Very Short Guide to SMTP
+Simple Mail Transport Protocol is pretty damn cool if you ask me. It’s dead simple, basically the client can only say “hello, here’s an email from X to Y”. Just like HTTP, it’s fully push based. There’s no polling, emails get pushed across the internet. Just like HTTP, it has a hole stack of response codes which are of course appropriate to trying to send an email, rather than talk to a web resource.
+
+Using Postfix Mail Filters to Call Ruby
+Postfix is a common open source SMTP server. Before I looked at it, it was big and scary. After a few hours of expert help, I wonder what seemed so complicated. One of the basic ways that we can use postfix to push mail to our rails app is by specifying a command like script which gets executed whenever postfix gets an email. This is the first option presented on the rails wiki, and they suggest using a script which calls the receive method of one of your ActionMailer classes.
+
+My Concern
+If we’re going to use ActionMailer to parse an email, and then presumably fire off a bunch of ActiveRecord code to make changes to your database as a result, clearly we’re loading the entire rails stack. Every time we get an email we’re loading the entire rails stack. This seems like how we handled web requests back in the day when there was only mod_cgi. No shared resources between requests, a big performance hit for loading all of rails and then getting rid of it each time, and the concern that we can only handle as many incoming emails as we have RAM on our server as the rails code takes up a bunch of memory.
+
+What I Want
+I don’t want to have to worry about the resources I need to scale my email server, I already do that with my application servers. I want to handle emails in a way that re-uses an in-memory copy of the rails classes and called be scaled in a predictable way.
+
+That sounds a lot like a mongrel cluster.
+
+We all have one of those already right. So why not handle incoming mail over HTTP? It’s dead easy, it scales well, and the result is really Rails-ish.
+
+respond_to.email
+I was hoping to get a plugin out of this. It’d be so handy that people would queue for miles to download it. The trouble is, it’s actually not even enough code to bother, it’s only about three lines of ruby and the same of postfix config. So, lets call this a pattern. I’ll describe how to do it, and you can all run off and do it yourself.
+
+Step One: Install Postfix
+Install postfix on one of your servers. For any sizable rails site, I like to have a little VPS just for daemons, cron jobs, scripts, and the mail server, to keep it separate from all the web stuff. On ubuntu, this was as easy as “sudo apt-get install postfix”. For the default configuration type, I chose “internet site”.
+
+Step Two: Setup Your MX Record
+For mail to start arriving at your mail server, you need to add a MX record to your DNS which points at the url of your server. Depending on your host, you probably have a web interface to do this, and it’s probably dead easy.
+
+The Magic Script!
+Create a file called mail_handler.rb, and pop it somewhere in your rails project. I created a /bin directory for it. Don’t use a rake task, the goal here is not to load in any unecessary stuff. Here’s the contents.
+
+
+#!/usr/bin/ruby
+require 'net/http'
+require 'uri'Net::HTTP.post_form URI.parse('http://www.craigambrose.com/emails'), { "email" => STDIN.read }
+If ruby is somewhere else on your machine, change the line at the top to be correct (try “which ruby” on that machine to see where it is). I’ve chosen to hardcode in the url that I want to post the email to so that I don’t have to load any other files. If you have more deployment environments to worry about, you might want to put the target url in a yml file and parse it here. Just don’t load your rails environment file, that’s the whole point of this.
+
+Configuring Postfix to Call the Script
+In this example, the domain that I want to handle email for is “craigambrose.com”. Everywhere you see this, replace it with your own domain name. Most of the commands below need root access.
+
+In /etc/postfix/main.cf
+
+
+mydestination = localhost.localdomain, localhost, craigambrose.com
+virtual_maps = hash:/etc/postfix/virtual
+alias_maps = hash:/etc/aliases
+In /etc/postfix/virtual (this is a file, you may need to create this)
+
+
+@craigambrose.com rails_mailer
+The above says to redirect any address at craigambrose.com to the alias “rails_mailer”, which I’ll create next. You could run multiple rails apps of the same server by giving them all unique aliases. On the left, you can use a regular expression to match addresses if you only want to match some of them.
+
+To apply this change to virtuals, run:
+
+
+postmap /etc/postfix/virtual
+In /etc/aliases
+
+
+rails_mailer: "|/var/www/apps/craigambrose/current/bin/mail_handler.rb"
+That’s the alias we created on the left. On the right is the path to my script, change as necessary. The pipe character before the script path means “the following is a shell command, not an email address”.
+
+To apply this change to aliases, run:
+
+
+postalias /etc/aliases
+To apply the main configuration changes to postfix, run:
+
+
+/etc/init.d/postfix reload
+Testing the Setup
+I should be able to send an email now to “someaddress@craigambrose.com”. To see it get process by postfix, we might want to watch the postfix info log:
+
+
+tail -f /var/log/mail.info
+When the mail is process, you should see a line like:
+
+
+to=<someaddress@craigambrose.com>, orig_to=<root>, relay=local, delay=2, status=sent (delivered to command: /var/www/apps/craigambrose/current/mail_handler.rb)
+Then, go peek at your rails app logs. You should see that the mail has been passed through by the script. Even if you haven’t written an action to handle it yet, the log entry should be there.
+
+Troubleshooting
+If you didn’t see the correct line in your postfix logs, then perhaps there’s a problem with your DNS Set. You could try talking to postfix directly. Mail servers listen on port 25, and you can telnet into them and speak directly. Try “telnet YOUR_SERVER_IP 25” And the try typing in what the client says in the sample SMTP communication on wikipedia with the example address changed to the domain that you want to test. If that works, but sending email didn’t, you’ll need to investigate your DNS setup.
+
+Handling the Rails Action
+The target url I put in my mail script was http://www.craigambrose.com/emails, so the mail is going to get POSTed to that resource. With normal rails resource routes, that means that we’re expecting to handle the email in the create action of the EmailsController. That seems very sensible to me. My script puts the unparsed email into params[:email].
+
+To parse it with TMail, all you need to do is:
+
+
+require 'tmail'
+email = TMail::Mail.parse(params[:email])
+Alternatively you could pass it to the “receive” method of any ActionMailer derived class, which does the above automatically.
+
+I’ve had some reports that TMail is both a little slow, and also not quite up to parsing all the possible ways that an email might be encoded in the big bad world. That’s a subject for another blog post.
+
+Final Performance Note
+When postfix is calling your script, it makes so that only a certain number of calls are occurring concurrently, the default is 20, which seems pretty good to me. If you’d like to tweak this, use the following setting in main.cf (and don’t forget to reload postfix afterwards).
+
+
+default_destination_concurrency_limit = 30
+Acknowledgments
+Setting up servers is not my area of expertise. Many thanks to Andrew Snow of Octopus for the postfix help and Pete Yandell for sharing some of the lessons learned on his great mailing list site 9cays
+
+Tags: email, postfix, rails, ruby, smtp
+Hierarchy: previous, next
+Comments
+There are 21 comments on this post. Post yours →
+
+James
+posted on February 10, 2008 at 04:23 PM
+I’ve been trying to work out a solution for handling email (both local, as here, and remote, like GMail), SMS, Twitter, and other types of requests, and I haven’t been able to come to any decisions yet. I’d like to try to take this script and incorporate it into that larger concept.
+
+If anyone has any interest in working on this mini-project, I’d love to hear thoughts.
+
+
+Craig Ambrose
+posted on February 10, 2008 at 10:04 PM
+That sounds like a very interesting idea James. I think that there is a lot of appeal to the idea of handling everything as web request. I particularly remember the Asterisk (VoIP) talk from RailsConf last year that used the same idea to handle incoming voice requests as a normal respond_to block.
+
+Having said that, I imagine that the twitter guys would tell us that handling incoming SMS and IM messages with rails is not fast enough, and that something lighter weight is needed.
+
+Also, I still have a lingering concern that the downside of having the same method of scaling to handle all incoming data is that we aren’t isolated against a flood of one type of data. For example, getting too many SMS’s could also take the web site offline.
+
+Anyway, having said all that I think it’s basically a good plan, certainly for small to medium sized sites, and it presents the nicest interface for dealing with such data that I can think of. I’d like to have a chat to you about this.
+
+
+Josh Adams
+posted on February 11, 2008 at 12:32 PM
+You hardcoded the shebang and then told people to change it if it’s elsewhere. Why don’t you use env, e.g.
+
+!/usr/bin/env ruby
+That should be installed everywhere(-ish) and will just use ruby from the user’s env.
+
+I dunno, I use that in a decent number of scripts and if it’s stupid I’d like to know about it, and if it’s not I’d like to share it :)
+
+
+Danfo
+posted on February 13, 2008 at 03:45 PM
+What happens if the http server is down, or busy? The message is removed from the queue, and the http request fails. Message go bye-bye?
+
+
+Craig Ambrose
+posted on February 13, 2008 at 09:45 PM
+In the code I posted above, yes, that would happen. However, scripts executed by postfix have a few possible return options that can dictate how postfix should behave. It’s not the full range of possible SMTP return codes, but it’s enough to for the main ones such as “ok”, “failed but you can retry later”, and “permanent failure, send a bounce message”.
+
+I have this working, but I’m just cleaning up my code a bit today and then I’ll post another article explaining how it’s done.
+
+
+Dan
+posted on February 14, 2008 at 12:25 AM
+Great—this is a brilliant approach, thanks a lot for the article. I didn’t know a deliver to command could fail and make postfix wait to try again. Here’s how I was going to try to do it: http://pastie.caboo.se/pastes/151597
+
+At the moment I am running a dovecot IMAP server which gets polled every couple minutes. It works pretty well, but I could do without the overhead (on a VPS), and being able to process a couple messages at a time safely is a big win.
+
+Regarding one request type tying up the app servers: If default_destination_concurrency_limit is a couple less than how many app servers are running, this could mean there’s always at least one available for normal web requests? Or maybe nginx could manage the availability of the app servers for different request types (either by looking at the request or where it comes from).
+
+
+Craig Ambrose
+posted on February 14, 2008 at 07:17 AM
+Hi Dan,
+
+On the subject of returning a value to postfix so that it’ll try again, he’s a sneak preview of my current code for mail_handler.rb, expanded on what was in the article, to now return a sensible value to postfix.
+
+http://pastie.caboo.se/152010
+
+I’ve done a few extra things here, such as declare a “text/smtp” mime type in rails, so that the action I’m posting to returns a STMP response code, which I then convert to a unix command line return code.
+
+This is still a work in progress, and I expect a few more changes before my next article on this subject. If it’s looking sizeable, I might produce a plugin for it.
+
+Regarding the concurrency limit being smaller than the number of mongrel servers, that sounds like a very good idea actually. :)
+
+cheers,
+
+Craig
+
+
+benni
+posted on March 04, 2008 at 11:44 AM
+Hey
+
+I was thinking of making my own maillinglist a long time. so thanks a lot for your post.
+but, I have to deal with qmail instead of postfix. anyone knows how to configure it?
+
+greetings,
+benni
+
+
+Craig Ambrose
+posted on March 04, 2008 at 08:49 PM
+Hi Benni,
+
+I haven’t used qmail myself, but I did notice that the rails wiki page (http://wiki.rubyonrails.org/rails/pages/HowToReceiveEmailsWithActionMailer) has a section entitled “Configuring Qmail to forward the emails” which covers how to get gmail to forward mails to a script. Seems like my script would work with that too.
+
+cheers,
+
+Craig
+
+
+Mikel
+posted on March 24, 2008 at 05:59 PM
+Heya Craig,
+
+Nice write up and good idea on passing it into your rails app via http! Smart :)
+
+I maintain TMail now, I’ve made a lot of changes, do you have anything in particular about TMail that is slow or any example emails? Always willing to get more emails that TMail can’t handle to the tmail website (tmail.rubyforge.org).
+
+Lemmie know.
+
+Mikel
+
+
+Marcus
+posted on April 05, 2008 at 09:35 PM
+Hi Craig,
+
+Very interesting approach!
+
+In your intro you mention that “POP3 is not a viable solution if you want to handle all email for a certain domain.” Are you saying this because it breaks at a certain volume of mail, or is there some other gotcha that people should be aware of if they are considering that option.
+
+Thanks,
+Marcus
+
+
+Mitchell
+posted on April 17, 2008 at 04:56 PM
+If only I hadn’t ripped out all my procmail code a few weeks ago to switch to Gmail IMAP.
+
+Hosted IMAP is nice in its extreme reliability, simplicity and fault tolerance (no losing messages when the mail handler goes awry, for example). But it lacks the elegance of what you’ve done here.
+
+Hope you will resume the podcast someday, BTW.
+
+
+Gerald
+posted on June 04, 2008 at 02:55 AM
+Good day sir.
+
+I just want to ask if this article of your’s are also applicable to those websites that does not use rails?
+
+Thank you and Regards,
+
+
+Dave Spurr
+posted on November 25, 2008 at 11:14 PM
+This is a great starting point and really useful but it seems as though you progressed a bit further after writing this article and did threaten to write a follow-up article with your progress.
+
+Are you still planning to do that? If not or you don’t have the time any chance you could share you progress with some more examples at pastie?
+
+
+Craig Ambrose
+posted on November 26, 2008 at 09:06 PM
+Thanks Dave,
+
+I have got this system up and working fine, but I’m not really sure what other areas need explanation. Once the email is posted to a rails action, it’s pretty self explanatory.
+
+I’m happy to show off some code, but perhaps you could give me some thoughts on what info is missing which would be helpful, and then I’ll write something up.
+
+cheers,
+
+Craig
+
+
+Dave Spurr
+posted on November 27, 2008 at 11:10 AM
+Sorry I guess I wasn’t clear, it’s just in some of your later comments I got the impression that you’d progressed further (e.g. the comment above which links to the updated mail_handler.rb http://pastie.caboo.se/152010).
+
+I managed to get everything working very quickly thanks to your post but I was just checking to see if you had made some other improvements based on your experience of using it for real.
+
+Thanks again,
+
+-D
+
+p.s. If anyone is interested on how to use/test this in their development environment I simply setup my dynamic dns host (dyndns.org) to apply MX records to send mail to my dynamic dns host name. Then I simply set my router to route anything incoming on port 25 to my virtual machines IP.
+
+
+John Clancy
+posted on March 02, 2009 at 06:07 PM
+Two tips—
+
+1 You may need to add this to your controller if you have enabled protect_from_forgery for your application:
+skip_before_filter :verify_authenticity_token
+Obviously, this leaves you open to forgery so someone else may have an idea of a better way to handle it. For example, I tried to add “authenticity_token” => “your_token_here” to the hash containing “email”=>STDIN.read in mail_handler.rb but that didn’t work for me.
+
+2 You may have permissions problems with postfix calling mail_handler.rb. I moved mail_handler.rb to /etc/postfix/mail_handler.rb and did a chmod +x on it.
+
+
+Nitin R
+posted on March 09, 2009 at 11:29 AM
+I am not an expert on Rails yet, and your explaination made a lot of sense from fetching emails to executing script on every new email.
+But tell me can I installl Postfix on a Windows Development PC. I am using Netbeans IDE installed on Windows XP…
+
+Please guide. Already have a Perfectly running IPAddr:PORTNo based website with Message/commenting system with working notification framework everytime a new message comment is posted.
+
+I need to use your technique to POST a comment under a Particular Message in my Web Application via Replying to a Notification Email for any Message/Comment from your Mail client’s INBOX.
+
+
+flash game
+posted on March 22, 2009 at 05:31 AM
+If only I hadn’t ripped out all my procmail code a few weeks ago to switch to Gmail IMAP.
+
+Hosted IMAP is nice in its extreme reliability, simplicity and fault tolerance. But it lacks the elegance of what you’ve done here.
+
+
+Daniel S
+posted on March 27, 2009 at 02:11 AM
+Thanks for the tips.
+I used curl to post the email instead of using net/http
+in the mail_handler.rb file like this:
+
+%x[curl -d “email=#{STDIN.read}” http://localhost:4567/process_emails]
+
+works the same
+
+
+tower defense
+posted on May 03, 2009 at 02:52 AM
+I’ve made a lot of changes, do you have anything in particular about TMail that is slow or any example emails? Always willing to get more emails that TMail can’t handle to the tmail website…
+
+Post a comment
+Required fields in bold.
+Name:
+Email:
+URL:
+Comment:
+
+
+Ramblings about web development, agile methodologies and Ruby on Rails.
+
+You can search this site, view posts by tag or by author and browse the archives.
+
+Subscribe to the full-text RSS feed or the comments RSS feed.
+
+Tags: RailsConf07, attachmentfu, blogging, caching, capistrano, ci, deprec, email, factory, filecolumn, freeze, helper, imagemagick, images, metricfu, migration, minimagick, model, plugin, plugininstances, postfix, rails, rake, rmagick, rspec, ruby, simplelog, smackdown, smtp, testing, testunit, tutorial, typo, url
+Authors: Craig Ambrose
+Powered by SimpleLog
+
+
+All content ©2007-2012 Craig Ambrose, all rights reserved, back to top ↩
