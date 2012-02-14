@@ -63,8 +63,29 @@ class MailBuilder
     @mail
   end
 
-  def build_recipe_email
+  def build_recipe_mail
+    body = mail_text_body
+    body = body.gsub(/^#{@src_mail.subject.gsub(/Recipe: /, '')}$/, '') # remove recipe name in body
+    body = body.gsub(/^\*(?!Source).*$/i) do |meta| # transform prep time, cook time, etc... line
+      cooking_info = meta.split(' | ').map do |item|
+        item.gsub(/\*([\w\s]+):\*\s+([\w\s-]+)/, '**\1** \2  ')
+      end.join("\r\n")
+      "##Cooking Info##\r\n" + cooking_info + "\r\n"
+    end
 
+    body = body.gsub(/^Directions:(.*)(?=\*Source)/m) do |directions|
+      lines = []
+      directions.strip.each_line do |line|
+        lines << "#{(lines.count + 1).to_s}. #{line.gsub(/^\d+\./, '')}" if line.strip.length > 0
+      end
+      "##Directions##\r\n" + lines.join("") + "\r\n\r\n"
+    end
+
+    body = body.gsub(/^\*Source:\*$\W(.*)$/, "##Source:##\r\n[\\1](\\1)  ")
+    body = body.gsub(/^(Ingredients:)$/, '##\1##')
+    body = strip_attributions(body)
+
+    $stdout.write body
   end
 
   private
