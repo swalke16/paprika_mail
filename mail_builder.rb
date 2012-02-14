@@ -64,8 +64,11 @@ class MailBuilder
   end
 
   def build_recipe_mail
+    recipe_name = @src_mail.subject.gsub(/Recipe: /, '')
+
     body = mail_text_body
-    body = body.gsub(/^#{@src_mail.subject.gsub(/Recipe: /, '')}$/, '') # remove recipe name in body
+    body = recipe_image + body
+    body = body.gsub(/^#{recipe_name}$/, '') # remove recipe name in body
     body = body.gsub(/^\*(?!Source).*$/i) do |meta| # transform prep time, cook time, etc... line
       cooking_info = meta.split(' | ').map do |item|
         item.gsub(/\*([\w\s]+):\*\s+([\w\s-]+)/, '**\1** \2  ')
@@ -85,7 +88,25 @@ class MailBuilder
     body = body.gsub(/^(Ingredients:)$/, '##\1##')
     body = strip_attributions(body)
 
-    $stdout.write body
+    @mail.html_part = Mail::Part.new do
+      content_type 'text/html; charset=UTF-8'
+      body Redcarpet::Markdown.new(Redcarpet::Render::HTML).render(body)
+    end
+
+    # find the .paprikarecipe attachment and pass it along
+    @src_mail.parts.each do |part|
+      if (part.content_type =~ /application\/paprikarecipe/)
+        @mail.add_part(part)
+      end
+    end
+
+    @mail.subject = "#{recipe_name}#{tags("recipe")}"
+    @mail
+  end
+
+  def recipe_image
+    #TODO: implement me...
+    ""
   end
 
   private
