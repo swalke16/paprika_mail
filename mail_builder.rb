@@ -1,12 +1,7 @@
 require 'rubygems'
 require 'mail'
 require 'redcarpet'
-
-# TODO:
-# tag based on categories...
-#body = "<img src='cid:#{}'>" + body
-# meal plan link to recipes
-# attachments
+require 'base64'
 
 class MailBuilder
   BLOG_URL_ROOT = 'http://www.fitpaleofamily.com/'
@@ -15,7 +10,8 @@ class MailBuilder
     @src_mail = mail
     @mail = Mail.new do
       from 'swalke16@gmail.com'
-      to 'fitpaleofamily@posterous.com'
+      #to 'fitpaleofamily@posterous.com'
+      to 'swalke16@gmail.com'
     end
   end
 
@@ -67,13 +63,12 @@ class MailBuilder
     recipe_name = @src_mail.subject.gsub(/Recipe: /, '')
 
     body = mail_text_body
-    body = recipe_image + body
     body = body.gsub(/^#{recipe_name}$/, '') # remove recipe name in body
     body = body.gsub(/^\*(?!Source).*$/i) do |meta| # transform prep time, cook time, etc... line
       cooking_info = meta.split(' | ').map do |item|
         item.gsub(/\*([\w\s]+):\*\s+([\w\s-]+)/, '**\1** \2  ')
       end.join("\r\n")
-      "##Cooking Info##\r\n" + cooking_info + "\r\n"
+      "###Cooking Info\r\n" + cooking_info + "\r\n"
     end
 
     body = body.gsub(/^Directions:(.*)(?=\*Source)/m) do |directions|
@@ -81,32 +76,43 @@ class MailBuilder
       directions.strip.each_line do |line|
         lines << "#{(lines.count + 1).to_s}. #{line.gsub(/^\d+\./, '')}" if line.strip.length > 0
       end
-      "##Directions##\r\n" + lines.join("") + "\r\n\r\n"
+      "###Directions\r\n" + lines.join("") + "\r\n\r\n"
     end
 
-    body = body.gsub(/^\*Source:\*$\W(.*)$/, "##Source:##\r\n[\\1](\\1)  ")
-    body = body.gsub(/^(Ingredients:)$/, '##\1##')
+    body = body.gsub(/^\*Source:\*$\W(.*)$/, "###Source:\r\n[\\1](\\1)  ")
+    body = body.gsub(/^(Ingredients:)$/, '###\1')
     body = strip_attributions(body)
+
+    # find the image and convert to attachment and link
+    img_data = @src_mail.html_part.body.to_s.match(/<img src="(.*?)">/m)
+    if img_data
+      img_ext = "png"
+      img_data = img_data[1]
+      img_data = img_data.gsub(/data:image\/([\w|-]+);base64,/) do |image_info|
+        img_ext = $1
+        ""
+      end
+      @mail.attachments["photo.#{img_ext}"] = Base64.decode64(img_data)
+
+      body = "![#{recipe_name}](#{@mail.attachments.last.url})  \r\n\r\n" + body
+    end
+
+    # find the .paprikarecipe attachment and pass it along
+    # TODO: amazon won't let us send this. use s3? or support hrecipe
+    # @src_mail.parts.each do |part|
+    #   if (part.content_type =~ /application\/paprikarecipe/)
+    #     @mail.add_part(part)
+    #   end
+    # end
 
     @mail.html_part = Mail::Part.new do
       content_type 'text/html; charset=UTF-8'
       body Redcarpet::Markdown.new(Redcarpet::Render::HTML).render(body)
     end
 
-    # find the .paprikarecipe attachment and pass it along
-    @src_mail.parts.each do |part|
-      if (part.content_type =~ /application\/paprikarecipe/)
-        @mail.add_part(part)
-      end
-    end
-
+    #TODO: tag recipes based on categories (currently not available)
     @mail.subject = "#{recipe_name}#{tags("recipe")}"
     @mail
-  end
-
-  def recipe_image
-    #TODO: implement me...
-    ""
   end
 
   private
