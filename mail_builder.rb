@@ -72,12 +72,20 @@ class MailBuilder
       "###Cooking Info\r\n" + cooking_info + "\r\n"
     end
 
-    body = body.gsub(/^Directions:(.*)(?=\*Source)/m) do |directions|
-      lines = []
-      directions.strip.each_line do |line|
-        lines << "#{(lines.count + 1).to_s}. #{line.gsub(/^\d+\./, '')}" if line.strip.length > 0
+    body = body.gsub(/^(?>Directions:)(.*?)(?=\*Source)/m) do |directions|
+      formatted_lines = []
+      lines = $1.strip.lines.to_a
+      lines.each_with_index do |line, i|
+        next if line.strip.length == 0
+        next if i > 0 && lines[i-1].strip.length > 0
+
+        if i < lines.count - 1
+          line = "#{line.strip} #{lines[i+1]}" unless lines[i+1].match(/^\\n/)
+        end
+
+        formatted_lines << "#{(formatted_lines.count).to_s}. #{line.gsub(/^\d+\./, '')}"
       end
-      "###Directions\r\n" + lines.join("") + "\r\n\r\n"
+      "###Directions\r\n" + formatted_lines.join("") + "\r\n\r\n"
     end
 
     body = body.gsub(/^\*Source:\*$\W(.*)$/, "###Source:\r\n[\\1](\\1)  ")
@@ -95,7 +103,8 @@ class MailBuilder
       end
       @mail.attachments["photo.#{img_ext}"] = Base64.decode64(img_data)
 
-      body = "![#{recipe_name}](#{@mail.attachments.last.url})  \r\n\r\n" + body
+      # Not needed, posterous automagically builds the gallery
+      #body = "![#{recipe_name}](#{@mail.attachments.last.url})  \r\n\r\n" + body
     end
 
     # find the .paprikarecipe attachment and pass it along
