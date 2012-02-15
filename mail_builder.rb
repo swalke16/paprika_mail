@@ -67,7 +67,7 @@ class MailBuilder
     body = body.gsub(/^#{recipe_name}$/, '') # remove recipe name in body
     body = body.gsub(/^\*(?!Source).*$/i) do |meta| # transform prep time, cook time, etc... line
       cooking_info = meta.split(' | ').map do |item|
-        item.gsub(/\*([\w\s]+):\*\s+([\w\s-]+)/, '**\1** \2  ')
+        item.gsub(/\*([\w\s]+):\W?\*\s+([\w\s-]+)/, '**\1** \2  ')
       end.join("\r\n")
       "###Cooking Info\r\n" + cooking_info + "\r\n"
     end
