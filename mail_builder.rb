@@ -65,11 +65,11 @@ class MailBuilder
 
     body = mail_text_body
     body = body.gsub(/^#{recipe_name}$/, '') # remove recipe name in body
-    body = body.gsub(/^\*(?!Source).*$/i) do |meta| # transform prep time, cook time, etc... line
-      cooking_info = meta.split(' | ').map do |item|
-        item.gsub(/\*([\w\s]+):\W?\*\s+([\w\s-]+)/, '**\1** \2  ')
-      end.join("\r\n")
-      "###Cooking Info\r\n" + cooking_info + "\r\n"
+    body = body.gsub(/^\*(?!Source)(.*?)(?=Ingredient)/im) do |meta| # transform prep time, cook time, etc... line
+      cooking_info = meta.gsub(/\n/, '').split(' | ').map do |item|
+        item.gsub(/\*([\w\s]+):\*\s+([\w-]+)/, '**\1:** \2')
+      end.join("  \r\n")
+      "###Cooking Info:\r\n" + cooking_info + "\r\n\r\n"
     end
 
     body = body.gsub(/^(?>Directions:)(.*?)(?=\*Source)/m) do |directions|
@@ -85,7 +85,7 @@ class MailBuilder
 
         formatted_lines << "#{(formatted_lines.count).to_s}. #{line.gsub(/^\d+\./, '')}"
       end
-      "###Directions\r\n" + formatted_lines.join("") + "\r\n\r\n"
+      "###Directions:\r\n" + formatted_lines.join("") + "\r\n\r\n"
     end
 
     body = body.gsub(/^\*Source:\*$\W(.*)$/, "###Source:\r\n[\\1](\\1)  ")
