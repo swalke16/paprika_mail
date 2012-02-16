@@ -1,0 +1,12 @@
+- aisles.each do |aisle, items|
+  %h3= aisle + ":"
+
+  %ul
+    - items.each do |item|
+      %li= item
+
+%h3 Meal Plan:
+
+%a{:href => meal_plan_url}= meal_plan_url
+
+

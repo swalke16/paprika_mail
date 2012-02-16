@@ -2,14 +2,14 @@ module PaprikaMail::Parsers
 
   class GroceryListEmailParser < EmailParser
 
-    private
-
-    def parse_content
-      aisles = {}
+    def parse
+      grocery_list = PaprikaMail::Models::GroceryList.new(*parse_date_range)
       mail_text_body.scan(/Aisle:\s+([\w\s,]+)(- .*?)(?=Aisle:|Sent)/mi) do |aisle, items|
-        aisles[aisle.strip] = items.lines.reject {|line| line.chomp.length == 0}.map {|item| item.gsub(/-/,'').strip}
+        items.lines.reject {|line| line.chomp.length == 0}.each do |item|
+          grocery_list.add_item(aisle.strip, item.gsub(/-/,'').strip)
+        end
       end
-      @attrs[:aisles] = aisles
+      grocery_list
     end
 
   end

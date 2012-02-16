@@ -4,19 +4,18 @@ module PaprikaMail::Parsers
 
   class RecipeEmailParser < EmailParser
 
-    private
-
-    def parse_content
-      recipe = {}
-      recipe[:name] = @mail.subject.gsub(/Recipe: /, '')
-      recipe[:cooking_info] = parse_cooking_info
-      recipe[:directions] = parse_directions
-      recipe[:source] = parse_source
-      recipe[:ingredients] = parse_ingredients
-      recipe[:image] = parse_image
-
-      @attrs[:recipe] = recipe
+    def parse
+      recipe = PaprikaMail::Models::Recipe.new
+      recipe.name = @mail.subject.gsub(/Recipe: /, '')
+      parse_cooking_info.each { |name, value| recipe.add_attribute(name, value) }
+      recipe.directions.concat parse_directions
+      recipe.source = parse_source
+      recipe.ingredients.concat parse_ingredients
+      recipe.image = parse_image
+      recipe
     end
+
+    private
 
     def parse_cooking_info
       cooking_info = {}

@@ -4,9 +4,6 @@ module PaprikaMail::Parsers
 
     def initialize(mail)
       @mail = mail
-      @attrs = {}
-      parse_date_range
-      parse_content
     end
 
     def self.create(mail)
@@ -27,9 +24,7 @@ module PaprikaMail::Parsers
 
     def parse_date_range
       # matches dates in month/day/year format and captures them
-      date_range = @mail.subject.scan(/(\d{1,2}\/\d{1,2}\/\d{2,4})/).flatten
-      @attrs[:start_date] = date_range[0]
-      @attrs[:end_date] = date_range[1]
+      @mail.subject.scan(/(\d{1,2}\/\d{1,2}\/\d{2,4})/).flatten.map{|date| Date.strptime(date, '%m/%d/%y') }
     end
   end
 end

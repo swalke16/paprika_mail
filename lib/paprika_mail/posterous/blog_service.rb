@@ -1,12 +1,12 @@
 require 'posterous'
 
-module PaprikaMail::Posters
+module PaprikaMail
 
-  class Posterous
+  class BlogService
 
-    def initialize(site_id)
+    def initialize(cfg)
       ::Posterous.config = "#{PaprikaMail::CONFIG_PATH}/posterous.config"
-      @site_id = site_id
+      @site_id = cfg["site_id"]
     end
 
     def create(post)

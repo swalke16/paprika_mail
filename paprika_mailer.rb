@@ -10,10 +10,14 @@ message = $stdin.read
 # #log.debug message
 mail = Mail.new(message)
 
-#parser = PaprikaMail::Parsers::EmailParser.create(mail)
-#puts parser.attrs[:recipe].inspect
+parser = PaprikaMail::Parsers::GroceryListEmailParser.create(mail).parse
+puts parser.inspect
 
-poster = PaprikaMail::Posters::Posterous.new("fitpaleofamily")
-poster.create(:title => 'Test Post', :body => 'Test Post Body')
-puts poster.inspect
 
+require 'haml'
+require 'tilt'
+
+presenter = PaprikaMail::GroceryListPresenter.new(parser)
+
+template = Tilt::HamlTemplate.new('views/grocery_list.haml')
+puts template.render(presenter)

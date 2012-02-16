@@ -2,26 +2,18 @@ module PaprikaMail::Parsers
 
   class MealPlanEmailParser < EmailParser
 
-    private
-
-    def parse_content
-      days = {}
+    def parse
+      meal_plan = PaprikaMail::Models::MealPlan.new(*parse_date_range)
       mail_text_body.scan(/(Sunday|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday), ([\w, ]+)(.*?)(?=Sunday|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sent)/mi) do |day, date, meals|
-        days[day.strip] = {
-          :date => date.strip,
-          :meals => meals.strip.lines.reject{|line| line.chomp.length == 0}.map {|meal| parse_meal(meal)}
-        }
+        meals.strip.lines.reject{|line| line.chomp.length == 0}.each {|meal| meal_plan.add_meal(day.strip, *parse_meal(meal))}
       end
-      @attrs[:days] = days
+      meal_plan
     end
 
+    private
+
     def parse_meal(meal_string)
-      meal = {}
-      meal_string.strip.scan(/^(\w+):\s(.+)$/) do |name, recipe|
-        meal[:name] = name
-        meal[:recipe] = recipe
-      end
-      meal
+      meal_string.strip.scan(/^(\w+):\s(.+)$/).flatten
     end
 
   end

@@ -1,0 +1,12 @@
+- (start_date..end_date).each do |date|
+
+  %h3= date.strftime("%A, %B %d")
+
+  - send(date.strftime('%A')).each do |meal|
+    %p
+      %strong= meal.name + ":"
+      %a{:href => recipe_url(meal.recipe)}= meal.recipe
+
+  %h3 Grocery List:
+
+  %a{:href => grocery_list_url}= grocery_list_url

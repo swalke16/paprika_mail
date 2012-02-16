@@ -1,0 +1,22 @@
+%h3 Cooking Info:
+
+- @attributes.each do |info|
+  %p
+    %strong= info.name + ":"
+    = info.value
+
+%h3 Ingredients:
+
+%ul
+  - @ingredients.each do |ingredient|
+    %li= ingredient
+
+%h3 Directions:
+
+%ol
+  - @directions.each do |direction|
+    %li= direction
+
+%h3 Source:
+
+%a{:href => @source}= @source
