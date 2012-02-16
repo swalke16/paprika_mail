@@ -10,5 +10,9 @@ message = $stdin.read
 # #log.debug message
 mail = Mail.new(message)
 
-parser = PaprikaMail::Parsers::RecipeEmailParser.new(mail)
-puts parser.recipe.inspect
+parser = PaprikaMail::Parsers::EmailParser.create(mail)
+puts parser.attrs[:recipe].inspect
+
+cfg = PaprikaMail::Config::Posterous.new
+puts cfg.inspect
+

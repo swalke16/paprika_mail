@@ -1,5 +1,7 @@
 module PaprikaMail::Parsers
   class EmailParser
+    attr_reader :attrs
+
     def initialize(mail)
       @mail = mail
       @attrs = {}
@@ -7,14 +9,10 @@ module PaprikaMail::Parsers
       parse_content
     end
 
-    def method_missing(m, *args, &block)
-      return @attrs[m] if @attrs.has_key?(m)
-      super
-    end
-
-    def respond_to?(m)
-      return true if @attrs.has_key?(m)
-      super
+    def self.create(mail)
+      return MealPlanEmailParser.new(mail) if mail.subject =~ /Meal Plan/
+      return GroceryListEmailParser.new(mail) if mail.subject =~ /Grocery List/
+      return RecipeEmailParser.new(mail) if mail.subject =~ /Recipe/
     end
 
     private

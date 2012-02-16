@@ -12,6 +12,13 @@ port: 465
 user_name: 'name'
 password: 'password'
 
+7) Create a posterous.config file in /conf folder that contains this information:
+
+username: 'name'
+password: 'pass'
+api_token: 'api_token'
+
+
 
 Additional Info From Here:
 

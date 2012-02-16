@@ -1,10 +1,7 @@
-module PaprikaMail
+require 'require_all'
 
+module PaprikaMail
+  CONFIG_PATH = File.expand_path(File.dirname(__FILE__) + "/../conf")
 end
 
-require 'paprika_mail/parsers/email_parser'
-require 'paprika_mail/parsers/grocery_list_email_parser'
-require 'paprika_mail/parsers/meal_plan_email_parser'
-require 'paprika_mail/parsers/recipe_email_parser'
-
-
+require_rel 'paprika_mail'

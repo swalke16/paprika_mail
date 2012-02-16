@@ -1,3 +1,4 @@
 .rvmrc
 logs
 aws_ses.config
+posterous.config
