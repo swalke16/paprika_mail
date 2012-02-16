@@ -25,4 +25,6 @@ end
 
 require_rel 'paprika_mail/models'
 require_rel 'paprika_mail/parsers'
+require_rel 'paprika_mail/renderer'
 require_rel "paprika_mail/#{PaprikaMail.blog_service_name.downcase}"
+

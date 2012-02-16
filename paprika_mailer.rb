@@ -10,14 +10,7 @@ message = $stdin.read
 # #log.debug message
 mail = Mail.new(message)
 
-parser = PaprikaMail::Parsers::GroceryListEmailParser.create(mail).parse
-puts parser.inspect
+parser = PaprikaMail::Parsers::EmailParser.create(mail).parse
 
 
-require 'haml'
-require 'tilt'
-
-presenter = PaprikaMail::GroceryListPresenter.new(parser)
-
-template = Tilt::HamlTemplate.new('views/grocery_list.haml')
-puts template.render(presenter)
+puts PaprikaMail::Renderer.render(parser)
