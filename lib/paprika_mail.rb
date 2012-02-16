@@ -1,7 +1,7 @@
 require 'require_all'
 
 module PaprikaMail
-  CONFIG_PATH = File.expand_path(File.dirname(__FILE__) + "/../conf")
+  CONFIG_PATH = File.expand_path(File.dirname(__FILE__) + "/../config")
 end
 
 require_rel 'paprika_mail'

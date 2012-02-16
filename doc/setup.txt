@@ -5,14 +5,14 @@ Setup ec2 instance with:
 3) Postfix
 4) Install required gems
 5) Setup postfix configuration from git repo
-6) Create an aws_ses.config file in /conf folder that contains this information:
+6) Create an aws_ses.config file in /config folder that contains this information:
 
 address: 'host'
 port: 465
 user_name: 'name'
 password: 'password'
 
-7) Create a posterous.config file in /conf folder that contains this information:
+7) Create a posterous.config file in /config folder that contains this information:
 
 username: 'name'
 password: 'pass'

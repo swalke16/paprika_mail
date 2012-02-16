@@ -10,9 +10,10 @@ message = $stdin.read
 # #log.debug message
 mail = Mail.new(message)
 
-parser = PaprikaMail::Parsers::EmailParser.create(mail)
-puts parser.attrs[:recipe].inspect
+#parser = PaprikaMail::Parsers::EmailParser.create(mail)
+#puts parser.attrs[:recipe].inspect
 
-cfg = PaprikaMail::Config::Posterous.new
-puts cfg.inspect
+poster = PaprikaMail::Posters::Posterous.new("fitpaleofamily")
+poster.create(:title => 'Test Post', :body => 'Test Post Body')
+puts poster.inspect
 
