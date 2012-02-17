@@ -5,6 +5,7 @@ require 'logger'
 require 'yaml'
 require 'paprika_mail'
 
+#TODO: hRecipe
 mail = $stdin.read
 
 begin
