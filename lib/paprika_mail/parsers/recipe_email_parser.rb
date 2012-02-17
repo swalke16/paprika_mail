@@ -12,7 +12,8 @@ module PaprikaMail::Parsers
       recipe.source = parse_source
       recipe.ingredients.concat parse_ingredients
       recipe.add_image parse_image
-      parse_attachments.each { |file| recipe.add_media(file) }
+      #TODO: this is causing posterous to hose the html
+      #parse_attachments.each { |file| recipe.add_media(file) }
       recipe
     end
 
