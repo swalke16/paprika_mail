@@ -5,7 +5,7 @@ module PaprikaMail
   class MealPlanPresenter < SimpleDelegator
 
     def grocery_list_url
-      "#{PaprikaMail.blog_url}/grocery-list-#{start_date.strftime("%m%d%y")}-#{end_date.strftime("%m%d%y")}"
+      "#{PaprikaMail.blog_url}/grocery-list-#{start_date.strftime("%m%d%Y")}-#{end_date.strftime("%m%d%Y")}"
     end
 
     def recipe_url(name)
