@@ -62,7 +62,7 @@ module PaprikaMail::Parsers
       ingredients = []
 
       mail_text_body.scan(/Ingredients:\W+(.*?)(?=Directions)/mi) do |match|
-        ingredients = match[0].lines.reject {|line| line.chomp.length == 0}.map {|item| item.gsub(/-/,'').strip}
+        ingredients = match[0].lines.reject {|line| line.chomp.length == 0}.map {|item| item.strip.gsub(/^-/,'').strip}
       end
 
       ingredients
