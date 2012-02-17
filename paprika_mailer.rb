@@ -2,15 +2,15 @@ $: << File.expand_path(File.dirname(__FILE__)) + '/lib'
 
 require 'rubygems'
 require 'logger'
-require 'mail'
 require 'yaml'
 require 'paprika_mail'
 
-message = $stdin.read
-# #log.debug message
-mail = Mail.new(message)
+mail = $stdin.read
 
-parser = PaprikaMail::Parsers::EmailParser.create(mail).parse
+begin
+  model = PaprikaMail::Parsers::EmailParser.create(mail).parse
+  PaprikaMail.blog_service.create(model)
+rescue Exception => e
+  PaprikaMail.log(e.to_s)
+end
 
-
-puts PaprikaMail::Renderer.render(parser)

@@ -1,3 +1,5 @@
+require 'mail'
+
 module PaprikaMail::Parsers
   class EmailParser
     attr_reader :attrs
@@ -6,7 +8,8 @@ module PaprikaMail::Parsers
       @mail = mail
     end
 
-    def self.create(mail)
+    def self.create(mail_string)
+      mail = Mail.new(mail_string)
       return MealPlanEmailParser.new(mail) if mail.subject =~ /Meal Plan/
       return GroceryListEmailParser.new(mail) if mail.subject =~ /Grocery List/
       return RecipeEmailParser.new(mail) if mail.subject =~ /Recipe/

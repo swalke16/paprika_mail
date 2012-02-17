@@ -11,7 +11,8 @@ module PaprikaMail::Parsers
       recipe.directions.concat parse_directions
       recipe.source = parse_source
       recipe.ingredients.concat parse_ingredients
-      recipe.image = parse_image
+      recipe.add_image parse_image
+      parse_attachments.each { |file| recipe.add_media(file) }
       recipe
     end
 
@@ -68,25 +69,36 @@ module PaprikaMail::Parsers
     end
 
     def parse_image
-      image = {}
+      img_ext = 'png'
       img_data = mail_html_body.match(/<img src="(.*?)">/m)
       if img_data
         img_data = img_data[1]
-        image[:data] = Base64.decode64(img_data.gsub(/data:image\/([\w|-]+);base64,/) do |image_info|
-          image[:extension] = $1
+        img_data = Base64.decode64(img_data.gsub(/data:image\/([\w|-]+);base64,/) do |image_info|
+          img_ext = ".#{$1}"
           ""
         end)
       end
-      image
+
+      Tempfile.open(["recipe_photo", img_ext]) do |f|
+        f.write(img_data)
+        f
+      end
     end
 
-    # find the .paprikarecipe attachment and pass it along
-    # TODO: amazon won't let us send this. use s3? or support hrecipe
-    # @src_mail.parts.each do |part|
-    #   if (part.content_type =~ /application\/paprikarecipe/)
-    #     @mail.add_part(part)
-    #   end
-    # end
+    def parse_attachments
+      attachments = []
+
+      @mail.attachments.each do |attachment|
+        extension = File.extname(attachment.filename)
+        name = File.basename(attachment.filename).gsub(/#{extension}/, "")
+        attachments << Tempfile.open([name, extension]) do |f|
+          f.write(attachment.body.decoded)
+          f
+        end
+      end
+
+      attachments
+    end
 
   end
 

@@ -11,6 +11,8 @@ module PaprikaMail
       template.render(context)
     end
 
+    private
+
     def self.bare_class_name(obj)
       obj.class.name.split("::").last
     end
@@ -29,9 +31,12 @@ module PaprikaMail
     end
 
     def self.get_class(class_name)
+      begin
        return class_name.split('::').inject(Object) { |k,n| k.const_get n }
+      rescue
+        return class_name
+      end
     end
-
   end
 
 end

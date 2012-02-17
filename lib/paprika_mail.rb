@@ -1,8 +1,18 @@
 require 'require_all'
 require 'yaml'
+require 'logger'
 
 module PaprikaMail
   CONFIG_PATH = File.expand_path(File.dirname(__FILE__) + "/../config")
+  LOG_PATH = File.expand_path(File.dirname(__FILE__) + "/../logs")
+
+  def self.log(message)
+    unless @log
+      @log ||= Logger.new(LOG_PATH, 10, 102400)
+      @log.level = Logger::DEBUG
+    end
+    @log.debug(message)
+  end
 
   def self.blog_url
     config["blog"]["url"]
