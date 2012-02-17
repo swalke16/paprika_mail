@@ -1,23 +1,36 @@
-%h3 Cooking Info:
+.hrecipe
+  %h3 Cooking Info:
 
-- @attributes.each do |info|
   %p
-    %strong= info.name + ":"
-    = info.value
+    %strong Difficulty:
+    %span.difficulty= difficulty
+    %br
+    %strong Prep Time:
+    %span.preptime
+      = prep_time
+      -#%span.value-title{:title => 'PT10M'}
+    %br
+    %strong Cook Time:
+    %span.cooktime
+      = cook_time
+      -#%span.value-title{:title => 'PT10M'}
+    %br
+    %strong Servings:
+    %span.yield= servings
 
-%h3 Ingredients:
+  %h3 Ingredients:
 
-%ul
-  - @ingredients.each do |ingredient|
-    %li= ingredient
+  %ul.ingredients
+    - @ingredients.each do |ingredient|
+      %li.ingredient= ingredient
 
-%h3 Directions:
+  %h3 Directions:
 
-%ol
-  - @directions.each do |direction|
-    %li= direction
+  %ol.instructions
+    - @directions.each do |direction|
+      %li.instruction= direction
 
-%h3 Source:
+  %h3 Source:
 
-%p
-  %a{:href => @source}= @source
+  %p
+    %a{:href => @source}= @source

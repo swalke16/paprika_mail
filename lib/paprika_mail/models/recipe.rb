@@ -2,7 +2,10 @@ module PaprikaMail::Models
 
   class Recipe
     attr_accessor :name
-    attr_reader :attributes
+    attr_accessor :prep_time
+    attr_accessor :cook_time
+    attr_accessor :servings
+    attr_accessor :difficulty
     attr_reader :ingredients
     attr_reader :directions
     attr_accessor :source
@@ -14,10 +17,6 @@ module PaprikaMail::Models
       @ingredients = []
       @directions = []
       @media = []
-    end
-
-    def add_attribute(name, value)
-      @attributes << RecipeAttribute.new(name, value)
     end
 
     def add_image(filename)

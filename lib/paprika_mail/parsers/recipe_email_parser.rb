@@ -7,7 +7,7 @@ module PaprikaMail::Parsers
     def parse
       recipe = PaprikaMail::Models::Recipe.new
       recipe.name = @mail.subject.gsub(/Recipe: /, '')
-      parse_cooking_info.each { |name, value| recipe.add_attribute(name, value) }
+      parse_cooking_info.each { |name, value| recipe.send("#{name.gsub(/ /, '_').downcase}=", value) }
       recipe.directions.concat parse_directions
       recipe.source = parse_source
       recipe.ingredients.concat parse_ingredients
@@ -24,8 +24,8 @@ module PaprikaMail::Parsers
 
       mail_text_body.scan(/^(\*(?!Source).*?)(?=Ingredient)/im) do |meta|
         meta[0].gsub(/\n/, '').split(' | ').map do |item|
-          item.scan(/\*([\w\s]+):\*\s+([\w-]+)/) do |name, value|
-            cooking_info[name] = value
+          item.scan(/\*([\w\s]+):\*\s+([\w\s-]+)/) do |name, value|
+            cooking_info[name.strip] = value.strip
           end
         end
       end
