@@ -8,7 +8,7 @@ module PaprikaMail
 
   def self.log(message)
     unless @log
-      @log ||= Logger.new(LOG_PATH, 10, 102400)
+      @log ||= Logger.new("#{LOG_PATH}/paprika_mail_log", 10, 102400)
       @log.level = Logger::DEBUG
     end
     @log.debug(message)
