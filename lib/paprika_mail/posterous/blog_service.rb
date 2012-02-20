@@ -18,13 +18,13 @@ module PaprikaMail
     private
 
     def create_meal_plan_post(meal_plan)
-      make_post :title => "Meal Plan - #{meal_plan.start_date.strftime("%m/%d/%Y")} - #{meal_plan.end_date.strftime("%m/%d/%Y")}",
+      make_post :title => "Meal Plan: #{meal_plan.start_date.strftime("%m/%d/%Y")} - #{meal_plan.end_date.strftime("%m/%d/%Y")}",
                 :body => PaprikaMail::Renderer.render(meal_plan),
                 :tags => "meal plan"
     end
 
     def create_grocery_list_post(grocery_list)
-      make_post :title => "Grocery List - #{grocery_list.start_date.strftime("%m/%d/%Y")} - #{grocery_list.end_date.strftime("%m/%d/%Y")}",
+      make_post :title => "Grocery List: #{grocery_list.start_date.strftime("%m/%d/%Y")} - #{grocery_list.end_date.strftime("%m/%d/%Y")}",
                 :body => PaprikaMail::Renderer.render(grocery_list),
                 :tags => "grocery list"
     end
