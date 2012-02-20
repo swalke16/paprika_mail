@@ -6,7 +6,7 @@ module PaprikaMail
 
     def initialize(cfg)
       ::Posterous.config = cfg
-      @site_id = cfg["site_id"]
+      @site = ::Posterous::Site.find(cfg["site_id"])
     end
 
     def create(obj)
@@ -40,7 +40,6 @@ module PaprikaMail
                             :autopost => true.to_s,
                             :is_private => false.to_s})
 
-      @site ||= ::Posterous::Site.find(@site_id)
       delete_if_existing(attrs)
       @site.posts.create(attrs)
     end
