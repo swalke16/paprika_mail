@@ -41,7 +41,15 @@ module PaprikaMail
                             :is_private => false.to_s})
 
       @site ||= ::Posterous::Site.find(@site_id)
+      delete_if_existing(attrs)
       @site.posts.create(attrs)
+    end
+
+    private
+
+    def delete_if_existing(attrs)
+      post = @site.posts.detect {|p| p.title == attrs[:title]}
+      post.destroy if post
     end
 
   end
