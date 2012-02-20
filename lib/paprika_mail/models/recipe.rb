@@ -19,14 +19,14 @@ module PaprikaMail::Models
       @media = []
     end
 
-    def add_image(filename)
-      @image = add_media(filename)
+    def add_image(filename, file)
+      @image = PaprikaMail::Models::Attachment.new(filename, file)
     end
 
-    def add_media(filename)
-      file = filename.is_a?(String) ? File.open(filename) : filename
-      @media << file
-      file
+    def add_media(filename, file)
+      attachment = PaprikaMail::Models::Attachment.new(filename, file)
+      @media << attachment
+      attachment
     end
 
   end

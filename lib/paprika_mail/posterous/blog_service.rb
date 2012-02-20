@@ -5,7 +5,7 @@ module PaprikaMail
   class BlogService
 
     def initialize(cfg)
-      ::Posterous.config = "#{PaprikaMail::CONFIG_PATH}/posterous.config"
+      ::Posterous.config = cfg
       @site_id = cfg["site_id"]
     end
 
@@ -32,8 +32,7 @@ module PaprikaMail
     def create_recipe_post(recipe)
       make_post :title => recipe.name,
                 :body => PaprikaMail::Renderer.render(recipe),
-                :tags => "recipe",
-                :media => recipe.media
+                :tags => "recipe"
     end
 
     def make_post(attrs)

@@ -5,7 +5,7 @@ require 'logger'
 require 'yaml'
 require 'paprika_mail'
 
-#TODO: hRecipe
+#TODO: hRecipe - timing, photo, google search previews
 mail = $stdin.read
 
 begin
@@ -13,5 +13,6 @@ begin
   PaprikaMail.blog_service.create(model)
 rescue Exception => e
   PaprikaMail.log(e.to_s)
+  raise
 end
 

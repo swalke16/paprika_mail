@@ -6,18 +6,21 @@ module PaprikaMail::Parsers
 
     def parse
       recipe = PaprikaMail::Models::Recipe.new
-      recipe.name = @mail.subject.gsub(/Recipe: /, '')
+      recipe.name = parse_name
       parse_cooking_info.each { |name, value| recipe.send("#{name.gsub(/ /, '_').downcase}=", value) }
       recipe.directions.concat parse_directions
       recipe.source = parse_source
       recipe.ingredients.concat parse_ingredients
-      recipe.add_image parse_image
-      #TODO: this is causing posterous to hose the html
-      #parse_attachments.each { |file| recipe.add_media(file) }
+      recipe.add_image *parse_image
+      parse_attachments.each { |file| recipe.add_media(*file) }
       recipe
     end
 
     private
+
+    def parse_name
+      @mail.subject.gsub(/Recipe: /, '')
+    end
 
     def parse_cooking_info
       cooking_info = {}
@@ -82,19 +85,21 @@ module PaprikaMail::Parsers
 
       Tempfile.open(["recipe_photo", img_ext]) do |f|
         f.write(img_data)
-        f
+        ["#{parse_name}#{img_ext}", f]
       end
     end
 
     def parse_attachments
       attachments = []
 
+      #TODO: somtimes paprika fubars the filenames... WTF!??!!?
+
       @mail.attachments.each do |attachment|
         extension = File.extname(attachment.filename)
         name = File.basename(attachment.filename).gsub(/#{extension}/, "")
         attachments << Tempfile.open([name, extension]) do |f|
           f.write(attachment.body.decoded)
-          f
+          ["#{name}#{extension}", f]
         end
       end
 

@@ -15,15 +15,19 @@ module PaprikaMail
   end
 
   def self.blog_url
-    config["blog"]["url"]
+    config["blog_service"]["url"]
   end
 
   def self.blog_service_name
-    config["blog"]["service"]
+    config["blog_service"]["service"]
   end
 
   def self.blog_service
-    @blog_service ||= BlogService.new(config["blog"])
+    @blog_service ||= BlogService.new(config["blog_service"])
+  end
+
+  def self.file_storage
+    @file_storage ||= PaprikaMail::FileStorage.new(config["file_storage"])
   end
 
   private
@@ -36,5 +40,6 @@ end
 require_rel 'paprika_mail/models'
 require_rel 'paprika_mail/parsers'
 require_rel 'paprika_mail/renderer'
+require_rel 'paprika_mail/file_storage'
 require_rel "paprika_mail/#{PaprikaMail.blog_service_name.downcase}"
 

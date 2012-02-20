@@ -1,4 +1,5 @@
 .rvmrc
 logs
+aws_s3.config
 aws_ses.config
-posterous.config
+paprika_mail.config
