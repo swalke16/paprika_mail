@@ -12,7 +12,7 @@ begin
   model = PaprikaMail::Parsers::EmailParser.create(mail).parse
   PaprikaMail.blog_service.create(model)
 rescue Exception => e
-  PaprikaMail.log(e.to_s)
+  PaprikaMail.log(e)
   raise
 end
 

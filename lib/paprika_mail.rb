@@ -11,7 +11,7 @@ module PaprikaMail
       @log ||= Logger.new("#{LOG_PATH}/paprika_mail_log", 10, 102400)
       @log.level = Logger::DEBUG
     end
-    @log.debug(message)
+    @log.debug(message_for(message))
   end
 
   def self.blog_url
@@ -34,6 +34,16 @@ module PaprikaMail
 
   def self.config
     @config ||= YAML.load_file("#{CONFIG_PATH}/paprika_mail.config")
+  end
+
+  def self.message_for(obj)
+    if obj.is_a? Exception
+      obj = "\n\n#{obj.class} (#{obj.message}):\n    " +
+              obj.backtrace.join("\n    ") +
+              "\n\n"
+    end
+
+    obj
   end
 end
 
