@@ -5,19 +5,19 @@ Setup ec2 instance with:
 3) Postfix
 4) Install required gems
 5) Setup postfix configuration from git repo
-6) Create an aws_ses.config file in /config folder that contains this information:
+6) Create a paprika_mail.config file in /config folder that contains this information:
 
-address: 'host'
-port: 465
-user_name: 'name'
-password: 'password'
-
-7) Create a posterous.config file in /config folder that contains this information:
-
-username: 'name'
-password: 'pass'
-api_token: 'api_token'
-
+file_storage:
+  bucket: 'paprika-mail'
+  access_key_id: 'key'
+  secret_access_key: 'secret'
+blog_service:
+  url: "http://www.fitpaleofamily.com"
+  service: "Posterous"
+  site_id: "fitpaleofamily"
+  username: 'user'
+  password: 'pass'
+  api_token: 'token'
 
 
 Additional Info From Here:
