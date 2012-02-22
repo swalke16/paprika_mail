@@ -30,6 +30,8 @@ module PaprikaMail::Parsers
       dates = @mail.subject.scan(/(\d{1,2}\/\d{1,2}\/\d{2,4})/).flatten.map{|date| Date.strptime(date, '%m/%d/%y') }
       if !dates || dates.length < 2
         infer_date_range Date.today
+      else
+        dates
       end
     end
 
