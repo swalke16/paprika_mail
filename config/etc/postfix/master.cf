@@ -103,3 +103,5 @@ scache    unix  -       -       n       -       1       scache
 #  flags=FR user=list argv=/usr/lib/mailman/bin/postfix-to-mailman.py
 #  ${nexthop} ${user}
 #
+paprika unix    -       n       n       -       2       pipe
+  flags=Xhq user=ec2-user directory=/home/ec2-user/paprika_mail argv=/usr/local/bin/ruby paprika_mailer.rb

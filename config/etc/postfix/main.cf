@@ -63,7 +63,7 @@ mail_owner = postfix
 # These rights are used in the absence of a recipient user context.
 # DO NOT SPECIFY A PRIVILEGED USER OR THE POSTFIX OWNER.
 #
-default_privs = ec2-user
+#default_privs = nobody
 
 # INTERNET HOST AND DOMAIN NAMES
 #
@@ -74,7 +74,6 @@ default_privs = ec2-user
 #
 #myhostname = host.domain.tld
 #myhostname = virtual.domain.tld
-myhostname = mail.fitpaleofamily.com
 
 # The mydomain parameter specifies the local internet domain name.
 # The default is to use $myhostname minus the first component.
@@ -97,7 +96,6 @@ myhostname = mail.fitpaleofamily.com
 # to recipient addresses that have no @domain part.
 #
 #myorigin = $myhostname
-myorigin = $mydomain
 
 # RECEIVING MAIL
 
@@ -111,7 +109,7 @@ myorigin = $mydomain
 #
 # Note: you need to stop/start Postfix when this parameter changes.
 #
-inet_interfaces = all
+#inet_interfaces = all
 #inet_interfaces = $myhostname
 #inet_interfaces = $myhostname, localhost
 #inet_interfaces = localhost
@@ -164,8 +162,7 @@ inet_protocols = all
 #
 #mydestination = $myhostname, localhost.$mydomain, localhost
 #mydestination = $myhostname, localhost.$mydomain, localhost, $mydomain
-mydestination = $myhostname, localhost.$mydomain, localhost, $mydomain,
-#	mail.$mydomain, www.$mydomain, ftp.$mydomain
+#mail.$mydomain, www.$mydomain, ftp.$mydomain
 
 # REJECTING MAIL FOR UNKNOWN LOCAL USERS
 #
@@ -249,7 +246,7 @@ unknown_local_recipient_reject_code = 550
 #
 #mynetworks_style = class
 #mynetworks_style = subnet
-mynetworks_style = host
+#mynetworks_style = host
 
 # Alternatively, you can specify the mynetworks list by hand, in
 # which case Postfix ignores the mynetworks_style setting.
@@ -383,8 +380,6 @@ mynetworks_style = host
 # "postfix reload" to eliminate the delay.
 #
 #alias_maps = dbm:/etc/aliases
-alias_maps = hash:/etc/aliases
-virtual_maps = hash:/etc/postfix/virtual
 #alias_maps = hash:/etc/aliases, nis:mail.aliases
 #alias_maps = netinfo:/aliases
 
@@ -395,7 +390,6 @@ virtual_maps = hash:/etc/postfix/virtual
 #
 #alias_database = dbm:/etc/aliases
 #alias_database = dbm:/etc/mail/aliases
-alias_database = hash:/etc/aliases
 #alias_database = hash:/etc/aliases, hash:/opt/majordomo/aliases
 
 # ADDRESS EXTENSIONS (e.g., user+foo)
@@ -675,3 +669,11 @@ sample_directory = /usr/share/doc/postfix-2.6.6/samples
 # readme_directory: The location of the Postfix README files.
 #
 readme_directory = /usr/share/doc/postfix-2.6.6/README_FILES
+
+myhostname = mail.fitpaleofamily.com
+myorigin = $mydomain
+mydestination = $myhostname, localhost.$mydomain, localhost, $mydomain
+mynetworks_style = host
+alias_maps = hash:/etc/aliases
+alias_database = hash:/etc/aliases
+header_checks = regexp:/etc/postfix/header_checks

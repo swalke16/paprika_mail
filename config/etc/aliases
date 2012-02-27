@@ -95,5 +95,5 @@ decode:         root
 # Person who should get root's mail
 #root:          marc
 
-paprika:        "|/usr/bin/ruby /home/ec2-user/paprika_mail/paprika_mailer.rb"
+paprika:        ec2-user
 
