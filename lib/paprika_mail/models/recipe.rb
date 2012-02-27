@@ -9,6 +9,7 @@ module PaprikaMail::Models
     attr_reader :ingredients
     attr_reader :directions
     attr_accessor :source
+    attr_accessor :source_url
     attr_reader :image
     attr_reader :media
 

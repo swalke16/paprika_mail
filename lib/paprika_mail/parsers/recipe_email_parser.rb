@@ -1,3 +1,4 @@
+require 'uri'
 require 'base64'
 
 module PaprikaMail::Parsers
@@ -9,7 +10,7 @@ module PaprikaMail::Parsers
       recipe.name = parse_name
       parse_cooking_info.each { |name, value| recipe.send("#{name.gsub(/ /, '_').downcase}=", value) }
       recipe.directions.concat parse_directions
-      recipe.source = parse_source
+      recipe.source, recipe.source_url = parse_source
       recipe.ingredients.concat parse_ingredients
       image = parse_image
       recipe.add_image *image if image
@@ -39,8 +40,12 @@ module PaprikaMail::Parsers
 
     def parse_source
       source = nil
-      mail_text_body.scan(/^\*Source:\*\W(.*)$/) {|source_url| source = source_url[0]}
-      source
+      mail_text_body.scan(/^\*Source:\*\W(.*)$/) {|source_url| source = URI(source_url[0])}
+      if source
+        [source.host, source.to_s]
+      else
+        [nil, nil]
+      end
     end
 
     def parse_directions
