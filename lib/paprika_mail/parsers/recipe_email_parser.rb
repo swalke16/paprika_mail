@@ -38,7 +38,7 @@ module PaprikaMail::Parsers
 
     def parse_source
       source = nil
-      mail_text_body.scan(/^\*Source:\*$\W(.*)$/) {|source_url| source = source_url[0]}
+      mail_text_body.scan(/^\*Source:\*\W(.*)$/) {|source_url| source = source_url[0]}
       source
     end
 
