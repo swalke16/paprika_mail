@@ -1,6 +1,7 @@
 .hrecipe
   %p
-    %img.photo{:src => image.url}
+    - if image
+      %img.photo{:src => image.url}
     %br
     %a{:href => @media.first.url}
       Click to download recipe for Paprika
