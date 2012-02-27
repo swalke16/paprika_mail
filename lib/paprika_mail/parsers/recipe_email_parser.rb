@@ -27,7 +27,7 @@ module PaprikaMail::Parsers
       cooking_info = {}
 
       mail_text_body.scan(/^(\*(?!Source).*?)(?=Ingredient)/im) do |meta|
-        meta[0].gsub(/\n/, '').split(' | ').map do |item|
+        meta[0].gsub(/\n/, '').gsub(/\r/, '').gsub(/\s*\|\s*/, '|').split('|').map do |item|
           item.scan(/\*([\w\s]+):\*\s*(.+)/) do |name, value|
             cooking_info[name.strip] = value.strip
           end
