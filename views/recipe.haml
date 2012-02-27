@@ -24,6 +24,11 @@
     %br
     %strong Servings:
     %span.yield= servings
+    - if @source
+      %br
+      %strong Source:
+      %a.source{:href => @source_url}= @source
+
 
   %h3 Ingredients:
 
@@ -36,9 +41,3 @@
   %ol.instructions
     - @directions.each do |direction|
       %li.instruction= direction
-
-  - if @source
-    %h3 Source:
-
-    %p
-      %a{:href => @source_url}= @source
