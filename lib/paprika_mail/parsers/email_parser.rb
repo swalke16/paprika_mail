@@ -18,7 +18,7 @@ module PaprikaMail::Parsers
     private
 
     def mail_text_body
-      @mail_text_body ||= @mail.text_part.body.to_s
+      @mail_text_body ||= @mail.text_part.decoded.to_s #body.to_s
     end
 
     def mail_html_body
