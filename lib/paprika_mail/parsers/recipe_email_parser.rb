@@ -11,7 +11,8 @@ module PaprikaMail::Parsers
       recipe.directions.concat parse_directions
       recipe.source = parse_source
       recipe.ingredients.concat parse_ingredients
-      recipe.add_image *parse_image
+      image = parse_image
+      recipe.add_image *image if image
       parse_attachments.each { |file| recipe.add_media(*file) }
       recipe
     end
@@ -81,11 +82,11 @@ module PaprikaMail::Parsers
           img_ext = ".#{$1}"
           ""
         end)
-      end
 
-      Tempfile.open(["recipe_photo", img_ext]) do |f|
-        f.write(img_data)
-        ["#{parse_name}#{img_ext}", f]
+        Tempfile.open(["recipe_photo", img_ext]) do |f|
+          f.write(img_data)
+          ["#{parse_name}#{img_ext}", f]
+        end
       end
     end
 
