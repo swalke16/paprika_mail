@@ -46,8 +46,12 @@ module PaprikaMail
 
     private
 
+    def post_exists?(attrs)
+      @site.posts.detect {|p| p.title == attrs[:title]}
+    end
+
     def delete_if_existing(attrs)
-      post = @site.posts.detect {|p| p.title == attrs[:title]}
+      post = post_exists?(attrs)
       post.destroy if post
     end
 

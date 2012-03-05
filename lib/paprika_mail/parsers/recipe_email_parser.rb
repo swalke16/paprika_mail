@@ -39,12 +39,15 @@ module PaprikaMail::Parsers
     end
 
     def parse_source
-      source = nil
-      mail_text_body.scan(/^\*Source:\*\W(.*)$/) {|source_url| source = URI(source_url[0])}
-      if source
-        [source.host, source.to_s]
-      else
-        [nil, nil]
+      source = [nil, nil]
+
+      mail_text_body.scan(/^\*Source:\*\W(.*)$/) do  |source_url|
+        begin
+          uri = URI(source_url[0])
+          source = [uri.host, uri.to_s]
+        rescue URI::InvalidURIError => e
+          source = [source_url, nil]
+        end
       end
     end
 
