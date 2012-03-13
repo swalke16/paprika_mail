@@ -28,7 +28,10 @@
     - if @source
       %br
       %strong Source:
-      %a.source{:href => @source_url, :target => "_blank"}= @source
+      - if @source_url
+        %a.source{:href => @source_url, :target => "_blank"}= @source
+      - else
+        = @source
 
 
   %h3 Ingredients:

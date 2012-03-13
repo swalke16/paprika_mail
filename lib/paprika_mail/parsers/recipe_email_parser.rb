@@ -46,9 +46,11 @@ module PaprikaMail::Parsers
           uri = URI(source_url[0])
           source = [uri.host, uri.to_s]
         rescue URI::InvalidURIError => e
-          source = [source_url, nil]
+          source = [source_url[0], nil]
         end
       end
+
+      source
     end
 
     def parse_directions
