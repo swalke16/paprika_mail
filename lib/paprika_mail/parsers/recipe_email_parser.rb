@@ -1,11 +1,14 @@
 require 'uri'
 require 'base64'
+require 'json'
+require 'zlib'
 
 module PaprikaMail::Parsers
 
   class RecipeEmailParser < EmailParser
 
     def parse
+      load_recipe_json
       recipe = PaprikaMail::Models::Recipe.new
       recipe.name = parse_name
       parse_cooking_info.each { |name, value| recipe.send("#{name.gsub(/ /, '_').downcase}=", value) }
@@ -13,108 +16,86 @@ module PaprikaMail::Parsers
       recipe.source, recipe.source_url = parse_source
       recipe.ingredients.concat parse_ingredients
       image = parse_image
-      recipe.add_image *image if image
-      parse_attachments.each { |file| recipe.add_media(*file) }
+      recipe.add_image(*image)
+      recipe.add_media(*paprika_recipe)
       recipe
     end
 
     private
 
+    def load_recipe_json
+      gz = Zlib::GzipReader.new(paprika_recipe[1].open)
+      @recipe = JSON.parse(gz.read)
+    end
+
     def parse_name
-      @mail.subject.gsub(/Recipe: /, '')
+      @recipe["name"]
     end
 
     def parse_cooking_info
-      cooking_info = {}
-
-      mail_text_body.scan(/^(\*(?!Source).*?)(?=Ingredient)/im) do |meta|
-        meta[0].gsub(/\n/, '').gsub(/\r/, '').gsub(/\s*\|\s*/, '|').split('|').map do |item|
-          item.scan(/\*([\w\s]+):\*\s*(.+)/) do |name, value|
-            cooking_info[name.strip] = value.strip
-          end
-        end
-      end
-
-      cooking_info
+      cooking_info = {
+        "Cook Time" => @recipe["cook_time"],
+        "Prep Time" => @recipe["prep_time"],
+        "Servings" => @recipe["servings"],
+        "Difficulty" => @recipe["difficulty"],
+        "Rating" => @recipe["rating"],
+        "Nutritional Info" => @recipe["nutritional_info"]
+      }
     end
 
     def parse_source
       source = [nil, nil]
 
-      mail_text_body.scan(/^\*Source:\*\W(.*)$/) do  |source_url|
-        begin
-          uri = URI(source_url[0])
-          source = [uri.host, uri.to_s]
-        rescue URI::InvalidURIError => e
-          source = [source_url[0], nil]
-        end
+      begin
+        uri = URI(@recipe["source_url"])
+        source = [@recipe["source"], uri.to_s]
+      rescue URI::InvalidURIError => e
+        source = [@recipe["source"], nil]
       end
 
       source
     end
 
     def parse_directions
-      directions = []
-
-      mail_text_body.scan(/^(?>Directions:)(.*?)(?=\*Source)/m) do |match|
-        lines = match[0].strip.lines.to_a
-        lines.each_with_index do |line, i|
-          next if line.strip.length == 0
-          next if i > 0 && lines[i-1].strip.length > 0
-
-          if i < lines.count - 1
-            line = "#{line.strip} #{lines[i+1]}" unless lines[i+1].match(/^\\n/)
-          end
-
-          directions << line.gsub(/^\d+\./, '').strip
-        end
-      end
-
-      directions
+      @recipe["directions"].lines.reject {|line| line.chomp.length == 0}.map {|item| item.strip.gsub(/^-/,'').gsub(/\d+\.?/,'').strip}
     end
 
     def parse_ingredients
-      ingredients = []
-
-      mail_text_body.scan(/Ingredients:\W+(.*?)(?=Directions)/mi) do |match|
-        ingredients = match[0].lines.reject {|line| line.chomp.length == 0}.map {|item| item.strip.gsub(/^-/,'').strip}
-      end
-
-      ingredients
+      @recipe["ingredients"].lines.reject {|line| line.chomp.length == 0}.map {|item| item.strip.gsub(/^-/,'').strip}
     end
 
     def parse_image
-      img_ext = 'png'
-      img_data = mail_html_body.match(/<img src="(.*?)">/m)
-      if img_data
-        img_data = img_data[1]
-        img_data = Base64.decode64(img_data.gsub(/data:image\/([\w|-]+);base64,/) do |image_info|
-          img_ext = ".#{$1}"
-          ""
-        end)
+      if @recipe["photo"]
+        img_ext = File.extname @recipe["photo"]
+        img_data = Base64.decode64 @recipe["photo_data"]
 
         Tempfile.open(["recipe_photo", img_ext]) do |f|
           f.write(img_data)
           ["#{parse_name}#{img_ext}", f]
         end
+      else
+        [nil, nil]
       end
     end
 
-    def parse_attachments
-      attachments = []
+    def paprika_recipe
+      paprika_recipe = []
 
-      #TODO: somtimes paprika fubars the filenames... WTF!??!!?
+      name = @mail.subject.gsub(/Recipe: /, '')
+      ext = "paprikarecipe"
+
+      throw "Mail recipe attachment is hosed!" if @mail.attachments.count == 0
 
       @mail.attachments.each do |attachment|
-        extension = File.extname(attachment.filename)
-        name = File.basename(attachment.filename).gsub(/#{extension}/, "")
-        attachments << Tempfile.open([name, extension]) do |f|
-          f.write(attachment.body.decoded)
-          ["#{name}#{extension}", f]
+        if attachment.content_type =~ /#{ext}/
+          Tempfile.open([name, ".#{ext}"]) do |f|
+            f.write(attachment.body.decoded)
+            paprika_recipe << "#{name}.#{ext}" << f
+          end
         end
       end
 
-      attachments
+      paprika_recipe
     end
 
   end

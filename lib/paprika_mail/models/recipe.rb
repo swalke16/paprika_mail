@@ -6,6 +6,8 @@ module PaprikaMail::Models
     attr_accessor :cook_time
     attr_accessor :servings
     attr_accessor :difficulty
+    attr_accessor :rating
+    attr_accessor :nutritional_info
     attr_reader :ingredients
     attr_reader :directions
     attr_accessor :source
@@ -21,10 +23,12 @@ module PaprikaMail::Models
     end
 
     def add_image(filename, file)
+      return unless filename && file
       @image = PaprikaMail::Models::Attachment.new(filename, file)
     end
 
     def add_media(filename, file)
+      return unless filename && file
       attachment = PaprikaMail::Models::Attachment.new(filename, file)
       @media << attachment
       attachment
