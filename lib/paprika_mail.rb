@@ -2,6 +2,9 @@ require 'require_all'
 require 'yaml'
 require 'logger'
 
+# set encoding to prevent problems with JSON parsing of email content (only seems to happen on EC2)
+Encoding.default_external = Encoding::UTF_8
+
 module PaprikaMail
   CONFIG_PATH = File.expand_path(File.dirname(__FILE__) + "/../config")
   LOG_PATH = File.expand_path(File.dirname(__FILE__) + "/../logs")
